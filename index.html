@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Referral Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .section-transition {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .hidden {
+            opacity: 0;
+            display: none;
+        }
+        .visible {
+            opacity: 1;
+            display: block;
+        }
+        #sidebar a:hover{
+            background-color: rgba(255,255,255, 0.1);
+        }
+        .dashboard-grid {
+            grid-template-columns: repeat(2, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        #referralStatusChart {
+            max-height: 200px;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen">
+<div class="flex h-full">
+    <aside id="sidebar" class="bg-gray-800 text-white w-64 p-4">
+        <h1 class="text-xl font-semibold mb-6">Menu</h1>
+        <nav>
+            <ul class="space-y-2">
+                <li><a href="#" class="block hover:text-gray-300 p-2 rounded" id="dashboard-link">Dashboard</a></li>
+                <li><a href="#" class="block hover:text-gray-300 p-2 rounded" id="referral-link">Submit Referral</a></li>
+                <li><a href="#" class="block hover:text-gray-300 p-2 rounded" id="jobs-link">Job Announcements</a></li>
+                <li><a href="#" class="block hover:text-gray-300 p-2 rounded" id="leaderboard-link">Leaderboard</a></li>
+                <li><a href="#" class="block hover:text-gray-300 p-2 rounded" id="rewards-link">Rewards</a></li>
+                <li><a href="#" class="block hover:text-gray-300 p-2 rounded" id="faq-link">FAQ</a></li>
+                <li><a href="#" class="block hover:text-gray-300 p-2 rounded" id="logout-link">Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
+    <main class="flex-1 p-4">
+        <section id="dashboard-section" class="bg-white p-8 rounded shadow-md section-transition visible">
+            <h2 class="text-2xl font-semibold mb-6">Dashboard</h2>
+            <div class="grid dashboard-grid">
+                <div class="bg-white p-4 rounded shadow">
+                    <h2 class="text-lg font-semibold mb-2">Hires This Month</h2>
+                    <p id="hiresThisMonth" class="text-4xl font-bold text-blue-600">0</p>
+                </div>
+                <div class="bg-white p-4 rounded shadow">
+                    <h2 class="text-lg font-semibold mb-2">Referral Conversion Rate</h2>
+                    <p id="conversionRate" class="text-4xl font-bold text-green-600">0%</p>
+                    <p class="text-sm text-gray-500">Percentage of referrals that result in hires.</p>
+                </div>
+                <div class="bg-white p-4 rounded shadow">
+                    <h2 class="text-lg font-semibold mb-2">Referral Status</h2>
+                    <canvas id="referralStatusChart"></canvas>
+                </div>
+                <div class="bg-white p-4 rounded shadow">
+                    <h2 class="text-lg font-semibold mb-2">Referrals Over Time</h2>
+                    <canvas id="referralsOverTimeChart"></canvas>
+                </div>
+            </div>
+        </section>
+        <section id="referral-section" class="bg-white p-8 rounded shadow-md section-transition hidden">
+            <h2 class="text-2xl font-semibold mb-6">Submit Referral</h2>
+            <form id="referral-form">
+                <div class="mb-4">
+                    <label for="candidateName" class="block text-gray-700 text-sm font-bold mb-2">Candidate Name</label>
+                    <input type="text" id="candidateName" name="candidateName" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-4">
+                    <label for="candidateEmail" class="block text-gray-700 text-sm font-bold mb-2">Candidate Email</label>
+                    <input type="email" id="candidateEmail" name="candidateEmail" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-4">
+                    <label for="jobId" class="block text-gray-700 text-sm font-bold mb-2">Job ID</label>
+                    <input type="text" id="jobId" name="jobId" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full">Submit Referral</button>
+            </form>
+        </section>
+        <section id="jobs-section" class="bg-white p-8 rounded shadow-md section-transition hidden">
+            <h2 class="text-2xl font-semibold mb-6">Job Announcements</h2>
+            <div id="jobs-content">
+                <p>Loading Jobs...</p>
+            </div>
+        </section>
+        <section id="leaderboard-section" class="bg-white p-8 rounded shadow-md section-transition hidden">
+            <h2 class="text-2xl font-semibold mb-6">Leaderboard</h2>
+            <div id="leaderboard-content">
+                <p>Loading Leaderboard...</p>
+            </div>
+        </section>
+        <section id="rewards-section" class="bg-white p-8 rounded shadow-md section-transition hidden">
+            <h2 class="text-2xl font-semibold mb-6">Rewards</h2>
+            <div id="rewards-content">
+                <p>Loading Rewards...</p>
+            </div>
+        </section>
+        <section id="faq-section" class="bg-white p-8 rounded shadow-md section-transition hidden">
+            <h2 class="text-2xl font-semibold mb-6">FAQ</h2>
+            <div id="faq-content">
+                <p>Loading FAQ...</p>
+            </div>
+        </section>
+    </main>
+</div>
+<script>
+    const dashboardSection = document.getElementById('dashboard-section');
+    const referralSection = document.getElementById('referral-section');
+    const jobsSection = document.getElementById('jobs-section');
+    const leaderboardSection = document.getElementById('leaderboard-section');
+    const rewardsSection = document.getElementById('rewards-section');
+    const faqSection = document.getElementById('faq-section');
+    const sidebar = document.getElementById('sidebar');
+
+    const dashboardLink = document.getElementById('dashboard-link');
+    const referralLink = document.getElementById('referral-link');
+    const jobsLink = document.getElementById('jobs-link');
+    const leaderboardLink = document.getElementById('leaderboard-link');
+    const rewardsLink = document.getElementById('rewards-link');
+    const faqLink = document.getElementById('faq-link');
+    const logoutLink = document.getElementById('logout-link');
+
+    function showSection(section) {
+        const sections = [dashboardSection, referralSection, jobsSection, leaderboardSection, rewardsSection, faqSection];
+        sections.forEach(s => {
+            s.classList.remove('visible');
+            s.classList.add('hidden');
+        });
+        setTimeout(() => {
+            section.classList.remove('hidden');
+            section.classList.add('visible');
+        }, 50);
+    }
+
+    dashboardLink.addEventListener('click', () => showSection(dashboardSection));
+    referralLink.addEventListener('click', () => showSection(referralSection));
+    jobsLink.addEventListener('click', () => showSection(jobsSection));
+    leaderboardLink.addEventListener('click', () => showSection(leaderboardSection));
+    rewardsLink.addEventListener('click', () => showSection(rewardsSection));
+    faqLink.addEventListener('click', () => showSection(faqSection));
+    logoutLink.addEventListener('click', () => showSection(dashboardSection));
+
+    showSection(dashboardSection);
+
+    function fetchData(url, elementId, processData) {
+        const element = document.getElementById(elementId);
+        element.innerHTML = '<div class="text-center"><div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div></div>'; // Loading spinner
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                element.innerHTML = ''; // Clear loading spinner
+                processData(data, elementId);
+            })
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                element.innerHTML = '<p>Error loading data.</p>';
+            });
+    }
+
+    fetchData('/api/dashboard', 'hiresThisMonth', (data, id) => {
+        document.getElementById(id).textContent = data.hiresThisMonth;
+        document.getElementById('conversionRate').textContent = data.conversionRate + "%";
+        new Chart(document.getElementById('referralStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: data.referralStatus.labels,
+                datasets: [{
+                    data: data.referralStatus.data,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+                }]
+            },
+            options: {
+                animation: {
+                    animateRotate: true,
+                    animateScale: true
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('referralsOverTimeChart'), {
+            type: 'line',
+            data: {
+                labels: data.referralsOverTime.labels,
+                datasets: [{
+                    label: 'Referrals',
+                    data: data.referralsOverTime.data,
+                    borderColor: '#36A2EB',
+                    fill: false
+                }]
+            },
+            options: {
+                animation: {
+                    animateRotate: true,
+                    animateScale: true
+                }
+            }
+        });
+    });
+    fetchData('/api/jobs', 'jobs-content', (data, id) => {
+        const jobsContent = document.getElementById(id);
+        jobsContent.innerHTML = ''; // Clear existing content
+        data.forEach(job => {
+            const jobElement = document.createElement('div');
+            jobElement.className = 'p-4 border-b transition-opacity duration-300 ease-in-out';
+            jobElement.innerHTML = `<p>${job.title} - Job ID: ${job.jobId}</p>`;
+            jobsContent.appendChild(jobElement);
+        });
+    });
+
+    fetchData('/api/leaderboard', 'leaderboard-content', (data, id) => {
+        const leaderboardContent = document.getElementById(id);
+        leaderboardContent.innerHTML = '';
+        data.forEach((item, index) => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'p-4 border-b transition-opacity duration-300 ease-in-out';
+            itemElement.innerHTML = `<p>${index + 1}. ${item.name} - ${item.referrals} referrals</p>`;
+            leaderboardContent.appendChild(itemElement);
+        });
+    });
+
+    fetchData('/api/rewards', 'rewards-content', (data, id) => {
+        const rewardsContent = document.getElementById(id);
+        rewardsContent.innerHTML = '';
+        data.forEach(reward => {
+            const rewardElement = document.createElement('div');
+            rewardElement.className = 'p-4 border-b transition-opacity duration-300 ease-in-out';
+            rewardElement.innerHTML = `<p>${reward.description}</p>`;
+            rewardsContent.appendChild(rewardElement);
+        });
+    });
+
+    fetchData('/api/faq', 'faq-content', (data, id) => {
+        const faqContent = document.getElementById(id);
+        faqContent.innerHTML = '';
+        data.forEach(item => {
+            const faqItem = document.createElement('div');
+            faqItem.className = 'p-4 border-b transition-opacity duration-300 ease-in-out';
+            faqItem.innerHTML = `<p><strong>Q: ${item.question}</strong><br>A: ${item.answer}</p>`;
+            faqContent.appendChild(faqItem);
+        });
+    });
+
+    document.getElementById('referral-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const candidateName = document.getElementById('candidateName').value;
+        const candidateEmail = document.getElementById('candidateEmail').value;
+        const jobId = document.getElementById('jobId').value;
+
+        fetch('/api/referrals', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ candidateName, candidateEmail, jobId }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while submitting the referral.');
+            });
+    });
+
+</script>
+</body>
+</html>
